@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Мой день</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1F0; --surface:#FFFFFF; --ink:#1B2420; --ink-soft:#5B655F; --line:rgba(27,36,32,.12);
+  --pause:#8a8578; --err:#B3432E;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#12161A; --surface:#1B2126; --ink:#E7EAE8; --ink-soft:#9AA39D; --line:rgba(231,234,232,.14); --pause:#96917f; --err:#E08A77; }
+}
+:root[data-theme="dark"]{ --bg:#12161A; --surface:#1B2126; --ink:#E7EAE8; --ink-soft:#9AA39D; --line:rgba(231,234,232,.14); --pause:#96917f; --err:#E08A77; }
+html{scroll-padding-top:env(safe-area-inset-top,0px); height:100%;}
+*{box-sizing:border-box;}
+body{margin:0; min-height:100%; background:var(--bg); color:var(--ink); font-family:'Work Sans',sans-serif; -webkit-font-smoothing:antialiased;}
+button{font-family:inherit; -webkit-tap-highlight-color:transparent;}
+button:focus-visible{outline:2px solid var(--ink-soft); outline-offset:2px;}
+.wrap{max-width:460px; margin:0 auto; padding:20px 16px 48px;}
+.daynav{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
+.navbtn{background:none;border:none;color:var(--ink);font:500 22px 'Work Sans';width:48px;height:48px;border-radius:12px;cursor:pointer;}
+.navbtn:disabled{opacity:.3;cursor:default;}
+.daynav .date{font:500 15px 'Work Sans'; color:var(--ink);}
+.hero{background:var(--surface); border-radius:20px; padding:28px 22px; border:1.5px solid var(--line); text-align:center; margin-bottom:10px; transition:border-color .3s;}
+.hero .name{font:500 14px 'Work Sans'; margin-bottom:6px;}
+.hero .time{font:400 50px/1 'Fraunces',serif; letter-spacing:-.01em; font-variant-numeric:tabular-nums;}
+.hero .since{font:400 13px 'Work Sans'; color:var(--ink-soft); margin-top:8px;}
+.clearrow{display:flex; justify-content:flex-end; margin-bottom:10px;}
+.clearbtn{background:none;border:none;color:var(--err);font:500 12.5px 'Work Sans';padding:6px 2px;cursor:pointer;}
+.grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:8px;}
+.tile{position:relative; background:var(--surface); border:1.5px solid var(--line); border-radius:12px; padding:10px 22px 9px 10px; text-align:left; cursor:pointer;}
+.tile .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-bottom:6px;}
+.tile .lbl{display:block;font:500 12.5px/1.25 'Work Sans'; color:var(--ink); word-break:break-word;}
+.tile .edit{position:absolute; top:2px; right:2px; font-size:12px; color:var(--ink-soft); opacity:.55; padding:6px; background:none; border:none; cursor:pointer;}
+.pausetile,.addtile{grid-column:1/-1; display:flex; align-items:center; gap:8px; padding:12px; background:var(--surface); border:1.5px solid var(--line); border-radius:12px; cursor:pointer; text-align:left;}
+.pausetile{border-style:dashed;}
+.pausetile .lbl,.addtile .lbl{font:500 12.5px 'Work Sans'; color:var(--ink);}
+h2{display:flex; align-items:center; justify-content:space-between; font:600 14px 'Work Sans'; color:var(--ink-soft); margin:26px 0 10px;}
+.toggle{background:none;border:none;color:var(--ink);font:500 12.5px 'Work Sans';cursor:pointer;padding:4px;}
+.strip{display:flex; height:10px; border-radius:6px; overflow:hidden; margin-bottom:14px; background:var(--line);}
+.pie{width:180px;height:180px;border-radius:50%; margin:4px auto 16px;}
+.row{display:flex; align-items:center; gap:9px; padding:7px 0; font-size:13.5px; border-bottom:1px solid var(--line); cursor:pointer; background:none; border-left:none; border-right:none; border-top:none; width:100%; color:var(--ink); text-align:left;}
+.row .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.row .nm{flex:1; color:var(--ink);}
+.row .pct{color:var(--ink-soft); font-variant-numeric:tabular-nums; margin-right:6px;}
+.row .dur{color:var(--ink-soft); font-variant-numeric:tabular-nums;}
+.empty{color:var(--ink-soft); font-size:13.5px; padding:10px 0;}
+.overlay{position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; padding:20px; z-index:10;}
+.modal{background:var(--surface); border-radius:16px; padding:20px; max-width:360px; width:100%;}
+.modal h3{display:flex; justify-content:space-between; align-items:center; font:600 16px 'Work Sans'; margin:0 0 10px; gap:12px;}
+.modal h3 span.x{cursor:pointer; color:var(--ink-soft); font-size:15px;}
+.modal p{font:400 14px 'Work Sans'; color:var(--ink-soft); margin:0 0 16px;}
+.modal .btns{display:flex; gap:10px; justify-content:flex-end;}
+.modal .btns button{font:500 14px 'Work Sans'; border:none; background:none; padding:9px 14px; border-radius:8px; cursor:pointer; color:var(--ink);}
+.modal .btns button.primary{background:var(--ink); color:var(--bg);}
+.modal .btns button.danger{color:var(--err);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="daynav">
+    <button class="navbtn" id="prevDay">←</button>
+    <span class="date" id="dateLabel"></span>
+    <button class="navbtn" id="nextDay">→</button>
+  </div>
+
+  <div class="hero" id="hero">
+    <div class="name" id="heroName">—</div>
+    <div class="time" id="heroTime">00:00</div>
+    <div class="since" id="heroSince"></div>
+  </div>
+  <div class="clearrow" id="clearRow">
+    <button class="clearbtn" id="clearBtn">Очистить сегодня</button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <button class="addtile" id="addTile">
+    <span class="lbl">+ Добавить занятие</span>
+  </button>
+  <div style="height:8px"></div>
+  <button class="pausetile" id="pauseTile">
+    <span class="dot" style="background:var(--pause)"></span>
+    <span class="lbl">Пауза</span>
+  </button>
+
+  <h2><span>Отчёт за день</span><button class="toggle" id="pieToggle">Итоги дня</button></h2>
+  <div id="reportBody"></div>
+</div>
+
+<div id="modalRoot"></div>
+
+<script>
+const DAY = 86400000;
+const dateKey = ts => { const d=new Date(ts); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+const midnightAfter = ts => { const d=new Date(ts); d.setHours(24,0,0,0); return d.getTime(); };
+const isDark = () => matchMedia('(prefers-color-scheme:dark)').matches;
+const MAX_A = 12, MIN_A = 2;
+
+let activities, current, viewDate = dateKey(Date.now());
+let pieRequested = false;
+
+function hueColor(h, alpha){ const l = isDark()?58:40; return alpha!==undefined?`hsl(${h} 46% ${l}% / ${alpha})`:`hsl(${h} 46% ${l}%)`; }
+function pauseC(alpha){ const l=isDark()?55:45; return alpha!==undefined?`hsl(30 8% ${l}% / ${alpha})`:`hsl(30 8% ${l}%)`; }
+function colorFor(id){ return id==='pause' ? pauseC() : hueColor((activities.find(x=>x.id===id)||{}).hue||0); }
+
+function defaultActivities(){
+  const names = ['Учёба','Работа','Зал','Отдых','Чтение','Хобби','Творчество','Дела по дому','Сон','Прогулка','Соцсети','Другое'];
+  const hues = [18,42,70,130,165,195,215,255,285,320,345,5];
+  return names.map((n,i)=>({id:'a'+i, name:n, hue:hues[i]}));
+}
+
+function load(){
+  try{ activities = JSON.parse(localStorage.getItem('tt_activities')) || defaultActivities(); }catch(e){ activities = defaultActivities(); }
+  if(!activities.length) activities = defaultActivities();
+  try{ current = JSON.parse(localStorage.getItem('tt_current')); }catch(e){ current = null; }
+  if(!current || !current.start){ current = {id:'pause', name:'Пауза', start: Date.now()}; }
+}
+function saveActivities(){ try{ localStorage.setItem('tt_activities', JSON.stringify(activities)); }catch(e){} }
+function saveCurrent(){ try{ localStorage.setItem('tt_current', JSON.stringify(current)); }catch(e){} }
+function getLog(day){ try{ return JSON.parse(localStorage.getItem('tt_log_'+day)) || []; }catch(e){ return []; } }
+function setLog(day, list){ try{ if(!list.length) localStorage.removeItem('tt_log_'+day); else localStorage.setItem('tt_log_'+day, JSON.stringify(list)); }catch(e){} }
+function pushLog(day, session){ const log=getLog(day); log.push(session); setLog(day, log); }
+
+function rollover(){
+  let guard=0;
+  while(dateKey(current.start) < dateKey(Date.now()) && guard++<400){
+    const end = midnightAfter(current.start);
+    pushLog(dateKey(current.start), {id:current.id, name:current.name, start:current.start, end});
+    current = {id:'pause', name:'Пауза', start:end};
+  }
+  saveCurrent();
+}
+
+function switchTo(id, name){
+  if(current.id===id) return;
+  const now = Date.now();
+  pushLog(dateKey(current.start), {id:current.id, name:current.name, start:current.start, end:now});
+  current = {id, name, start:now};
+  saveCurrent();
+  viewDate = dateKey(Date.now());
+  render();
+}
+
+function fmt(ms){
+  const s = Math.max(0,Math.floor(ms/1000));
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), ss = s%60;
+  return h>0 ? `${h}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}` : `${m}:${String(ss).padStart(2,'0')}`;
+}
+
+// ---- modals ----
+function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
+function openModal(html){ document.getElementById('modalRoot').innerHTML = `<div class="overlay" id="ov">${html}</div>`; document.getElementById('ov').onclick = e=>{ if(e.target.id==='ov') closeModal(); }; }
+
+function promptRename(a){
+  openModal(`
+    <div class="modal">
+      <h3>Название занятия<span class="x" id="mClose">✕</span></h3>
+      <input id="mInput" value="${a.name}" maxlength="24" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:400 14px 'Work Sans';margin-bottom:14px;">
+      <div class="btns">
+        <button class="danger" id="mDelete" ${activities.length<=MIN_A?'disabled style="opacity:.35"':''}>Удалить занятие</button>
+        <button id="mCancel">Отмена</button>
+        <button class="primary" id="mSave">Сохранить</button>
+      </div>
+    </div>`);
+  document.getElementById('mClose').onclick = closeModal;
+  document.getElementById('mCancel').onclick = closeModal;
+  document.getElementById('mSave').onclick = ()=>{
+    const v = document.getElementById('mInput').value.trim();
+    if(v){ a.name = v.slice(0,24); saveActivities(); if(current.id===a.id){ current.name=a.name; saveCurrent(); } }
+    closeModal(); render();
+  };
+  document.getElementById('mDelete').onclick = ()=>{
+    if(activities.length<=MIN_A) return;
+    activities = activities.filter(x=>x.id!==a.id); saveActivities();
+    if(current.id===a.id){ current = {id:'pause', name:'Пауза', start: Date.now()}; saveCurrent(); }
+    closeModal(); render();
+  };
+}
+
+function promptAdd(){
+  openModal(`
+    <div class="modal">
+      <h3>Новое занятие<span class="x" id="mClose">✕</span></h3>
+      <input id="mInput" placeholder="Название" maxlength="24" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:400 14px 'Work Sans';margin-bottom:14px;">
+      <div class="btns"><button id="mCancel">Отмена</button><button class="primary" id="mAdd">Добавить</button></div>
+    </div>`);
+  document.getElementById('mClose').onclick = closeModal;
+  document.getElementById('mCancel').onclick = closeModal;
+  document.getElementById('mAdd').onclick = ()=>{
+    const v = document.getElementById('mInput').value.trim();
+    if(v && activities.length<MAX_A){
+      const hue = (activities.length*47)%360;
+      activities = activities.concat([{id:'c'+Date.now(), name:v.slice(0,24), hue}]);
+      saveActivities();
+    }
+    closeModal(); render();
+  };
+}
+
+function confirmClear(){
+  openModal(`
+    <div class="modal">
+      <h3>Очистить все данные за сегодня?</h3>
+      <p>Все активности за сегодня будут удалены без возможности восстановить.</p>
+      <div class="btns"><button id="mNo">Нет</button><button class="danger" id="mYes">Да</button></div>
+    </div>`);
+  document.getElementById('mNo').onclick = closeModal;
+  document.getElementById('mYes').onclick = ()=>{
+    const today = dateKey(Date.now());
+    setLog(today, []);
+    current = {id:'pause', name:'Пауза', start: Date.now()};
+    saveCurrent();
+    closeModal(); viewDate = today; render();
+  };
+}
+
+function confirmDeleteEntry(id, name, day){
+  openModal(`
+    <div class="modal">
+      <h3>Вы точно хотите удалить активность?<span class="x" id="mClose">✕</span></h3>
+      <p>${name}</p>
+      <div class="btns"><button id="mNo">Нет</button><button class="danger" id="mYes">Да</button></div>
+    </div>`);
+  document.getElementById('mClose').onclick = closeModal;
+  document.getElementById('mNo').onclick = closeModal;
+  document.getElementById('mYes').onclick = ()=>{
+    setLog(day, getLog(day).filter(s=>s.id!==id));
+    const today = dateKey(Date.now());
+    if(day===today && current.id===id){ current = {id:'pause', name:'Пауза', start: Date.now()}; saveCurrent(); }
+    closeModal(); render();
+  };
+}
+
+// ---- render ----
+function buildGrid(){
+  const grid = document.getElementById('grid');
+  grid.innerHTML='';
+  activities.forEach(a=>{
+    const c = hueColor(a.hue);
+    const btn = document.createElement('button');
+    btn.className = 'tile' + (current.id===a.id?' active':'');
+    btn.style.borderColor = current.id===a.id ? c : '';
+    btn.style.background = current.id===a.id ? hueColor(a.hue,0.14) : '';
+    btn.innerHTML = `<span class="dot" style="background:${c}"></span><span class="lbl">${a.name}</span><button class="edit" data-e="1">✎</button>`;
+    btn.onclick = (e)=>{ if(e.target.dataset.e) promptRename(a); else switchTo(a.id, a.name); };
+    grid.appendChild(btn);
+  });
+}
+
+function render(){
+  const today = dateKey(Date.now());
+  document.getElementById('dateLabel').textContent = viewDate===today ? 'Сегодня' :
+    new Date(viewDate).toLocaleDateString('ru-RU',{day:'numeric',month:'long'});
+  document.getElementById('nextDay').disabled = viewDate>=today;
+  document.getElementById('clearRow').style.display = viewDate===today ? 'flex' : 'none';
+  document.getElementById('addTile').style.display = activities.length<MAX_A ? 'flex' : 'none';
+  document.getElementById('pieToggle').style.display = viewDate===today ? 'inline-block' : 'none';
+  document.getElementById('pieToggle').textContent = pieRequested ? 'Скрыть итоги' : 'Итоги дня';
+
+  buildGrid();
+  const pt = document.getElementById('pauseTile');
+  const pc = pauseC();
+  pt.style.borderColor = current.id==='pause' ? pc : '';
+  pt.style.background = current.id==='pause' ? pauseC(0.14) : '';
+  pt.onclick = ()=> switchTo('pause','Пауза');
+
+  updateHero();
+
+  let sessions = getLog(viewDate).slice();
+  if(viewDate===today) sessions.push({id:current.id,name:current.name,start:current.start,end:Date.now()});
+  const totals = {};
+  sessions.forEach(s=>{
+    if(!totals[s.id]) totals[s.id]={name:s.name,id:s.id,ms:0};
+    totals[s.id].ms += Math.max(0,s.end-s.start);
+    totals[s.id].name = s.name;
+  });
+  const list = Object.values(totals).filter(t=>t.ms>0).sort((a,b)=>b.ms-a.ms);
+  const totalMs = list.reduce((s,t)=>s+t.ms,0) || 1;
+  const showPie = viewDate!==today || pieRequested;
+
+  const body = document.getElementById('reportBody');
+  body.innerHTML='';
+  if(!list.length){ body.innerHTML = '<div class="empty">За этот день пока пусто.</div>'; return; }
+
+  if(showPie){
+    let acc=0;
+    const stops = list.map(t=>{ const pct=t.ms/totalMs*100; const from=acc; acc+=pct; return `${colorFor(t.id)} ${from}% ${acc}%`; });
+    const pie = document.createElement('div');
+    pie.className='pie';
+    pie.style.background = `conic-gradient(${stops.join(',')})`;
+    body.appendChild(pie);
+    list.forEach(t=>{
+      const pct = Math.round(t.ms/totalMs*100);
+      body.appendChild(makeRow(t, pct));
+    });
+  } else {
+    const strip = document.createElement('div'); strip.className='strip';
+    list.forEach(t=>{
+      const seg=document.createElement('div');
+      seg.style.cssText = `width:${(t.ms/totalMs*100)}%; background:${colorFor(t.id)};`;
+      strip.appendChild(seg);
+    });
+    body.appendChild(strip);
+    list.forEach(t=> body.appendChild(makeRow(t, null)));
+  }
+}
+
+function makeRow(t, pct){
+  const row = document.createElement('button');
+  row.className='row';
+  row.innerHTML = `<span class="dot" style="background:${colorFor(t.id)}"></span><span class="nm">${t.name}</span>${pct!==null?`<span class="pct">${pct}%</span>`:''}<span class="dur">${fmt(t.ms)}</span>`;
+  row.onclick = ()=> confirmDeleteEntry(t.id, t.name, viewDate);
+  return row;
+}
+
+function updateHero(){
+  const c = colorFor(current.id);
+  document.getElementById('hero').style.borderColor = c;
+  const nameEl = document.getElementById('heroName');
+  nameEl.textContent = current.name;
+  nameEl.style.color = c;
+  document.getElementById('heroTime').textContent = fmt(Date.now()-current.start);
+  document.getElementById('heroSince').textContent = 'с ' + new Date(current.start).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+}
+
+document.getElementById('prevDay').onclick = ()=>{ viewDate = dateKey(new Date(viewDate).getTime()-DAY); render(); };
+document.getElementById('nextDay').onclick = ()=>{
+  const today = dateKey(Date.now());
+  if(viewDate<today){ viewDate = dateKey(new Date(viewDate).getTime()+DAY); render(); }
+};
+document.getElementById('clearBtn').onclick = confirmClear;
+document.getElementById('addTile').onclick = promptAdd;
+document.getElementById('pieToggle').onclick = ()=>{ pieRequested = !pieRequested; render(); };
+
+load();
+rollover();
+render();
+setInterval(()=>{ const today=dateKey(Date.now()); if(viewDate===today){ updateHero(); render(); } }, 1000);
+</script>
+</body>
+</html>
